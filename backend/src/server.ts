@@ -1,18 +1,25 @@
+import { createServer } from 'node:http';
+
 import app from './app.js';
 import { env } from './config/env.js';
+import { pool } from './lib/db.js';
+import { initializeChatSocket } from './modules/chat/chat.socket.js';
 
-const server = app.listen(env.PORT, () => {
-  console.log(
-    `Discipline OS API running on http://localhost:${env.PORT}`,
-  );
+const server = createServer(app);
+const io = initializeChatSocket(server);
+
+server.listen(env.PORT, () => {
+  console.log(`Discipline OS API running at ${env.API_URL}`);
 });
 
 const shutdown = (signal: string) => {
   console.log(`${signal} received. Shutting down server...`);
-
-  server.close(() => {
+  io.close(() => {
     console.log('HTTP server closed.');
-    process.exit(0);
+    void pool?.end().then(() => process.exit(0)).catch((error: unknown) => {
+      console.error('Database pool shutdown failed:', error);
+      process.exit(1);
+    });
   });
 };
 

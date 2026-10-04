@@ -1,75 +1,60 @@
-# React + TypeScript + Vite
+# Discipline OS frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The React + TypeScript frontend connects to the Express API under `/api/v1`.
+The Vite development server proxies both API calls and Socket.IO traffic to the
+backend.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From the repository root, configure `DATABASE_URL`, `JWT_SECRET`,
+`JWT_REFRESH_SECRET`, and `CLIENT_URL` in the backend environment file, then run:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm run dev:backend
+npm run dev:frontend
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Apply pending SQL migrations from the repository root with:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm --prefix backend run migrate
 ```
+
+## Chat
+
+The Messages panel supports direct and group conversations, message history,
+replies, editing and deleting your own messages, read receipts, online presence,
+and typing indicators. Conversations and messages are persisted in PostgreSQL;
+the Socket.IO connection is authenticated with the access token and only joins
+rooms for conversations where that user is a member.
+
+REST endpoints are authenticated and mounted at `/api/v1/chat`:
+
+- `GET /users?query=...` searches active users by username only.
+- `GET /conversations` lists the caller's conversations and unread counts.
+- `POST /conversations/direct` with `{ "userId": "..." }` opens or reuses a
+  direct conversation.
+- `POST /conversations/group` with `{ "name": "...", "memberIds": ["..."] }`
+  creates a group.
+- `GET /conversations/:id/messages?limit=50&before=<message-uuid>` loads
+  persisted message history.
+- `POST /conversations/:id/messages` with `{ "body": "...", "replyToId": null }`
+  sends a message.
+- `PATCH` or `DELETE /conversations/:id/messages/:messageId` edits or removes
+  the caller's own message.
+- `POST /conversations/:id/read` advances the caller's read position.
+
+Socket.IO clients authenticate using `auth.accessToken`. The server emits
+`chat:message`, `chat:message_updated`, `chat:read`, `chat:presence`,
+`chat:presence_snapshot`, and `chat:typing`. Clients may send
+`chat:typing_start` and `chat:typing_stop` with a conversation ID; membership is
+checked against the authenticated socket's conversation rooms.
+
+## Account recovery
+
+Password recovery uses the Resend API. Configure `RESEND_API_KEY` and
+`EMAIL_FROM` in the backend environment with a verified sender before enabling
+reset email delivery. The API returns an explicit service-unavailable response
+while email delivery is not configured; reset tokens are single-use, expire
+after one hour, and invalidate existing refresh sessions after a successful
+password change.

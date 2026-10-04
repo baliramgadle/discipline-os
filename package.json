@@ -1,10 +1,13 @@
 {
   "name": "discipline-os",
   "version": "1.0.0",
-  "description": "",
+  "description": "Discipline OS monorepo",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "test": "npm --prefix backend test && npm run build",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev -- --host 0.0.0.0"
   },
   "repository": {
     "type": "git",

@@ -7,6 +7,7 @@ build/
 .env.development
 .env.production
 .env.*.local
+auth.cookies.txt
 
 *.log
 
