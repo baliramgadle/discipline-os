@@ -7,7 +7,7 @@ const connectionString = env.DATABASE_URL;
 export const pool = connectionString
   ? new Pool({
       connectionString,
-      ssl: env.NODE_ENV === 'production' ? true : undefined,
+      ssl: env.NODE_ENV === 'production'? { rejectUnauthorized: false } : undefined,,
       max: env.NODE_ENV === 'production' ? 20 : 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
